@@ -1,15 +1,16 @@
 services:
   spark:
     image: apache/spark:4.1.1-python3
-    container_name: spark-connect
-    command: >
-      bash -c "
-        /opt/spark/sbin/start-connect-server.sh
-        --master local[*]
-        --driver-memory 2g
-        --conf spark.driver.extraJavaOptions='-Divy.cache.dir=/tmp -Divy.home=/tmp'
-        && tail -f /opt/spark/logs/*.out
-      "
+    hostname: spark
+    command:
+      - bash
+      - -c
+      - |
+        /opt/spark/sbin/start-connect-server.sh \
+          --master 'local[*]' \
+          --driver-memory 2g \
+          --conf spark.driver.extraJavaOptions='-Divy.cache.dir=/tmp -Divy.home=/tmp'
+        tail -f /opt/spark/logs/*.out
     ports:
       - "15002:15002"   # Spark Connect gRPC
       - "4040:4040"     # Spark UI
@@ -22,7 +23,7 @@ services:
     build:
       context: .
       dockerfile: jupyter.Dockerfile
-    container_name: jupyter
+    hostname: jupyter
     ports:
       - "8888:8888"
     volumes:
@@ -30,6 +31,7 @@ services:
       - ./data:/home/jovyan/data
     environment:
       - SPARK_REMOTE=sc://spark:15002
+    command: start-notebook.py --NotebookApp.token='' --NotebookApp.password=''
     depends_on:
       - spark
     networks:
